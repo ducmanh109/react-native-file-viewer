@@ -109,7 +109,7 @@ RCT_EXPORT_MODULE()
 }
 
 RCT_EXPORT_METHOD(open:(NSString *)path invocation:(nonnull NSNumber *)invocationId
-    options:(NSDictionary *)options)
+    options:(NSDictionary *)options resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 {
     NSString *displayName = [RCTConvert NSString:options[@"displayName"]];
     File *file = [[File alloc] initWithPath:path title:displayName];
@@ -118,9 +118,14 @@ RCT_EXPORT_METHOD(open:(NSString *)path invocation:(nonnull NSNumber *)invocatio
     controller.delegate = self;
 
     typeof(self) __weak weakSelf = self;
-    [[RNFileViewer topViewController] presentViewController:controller animated:YES completion:^{
-        [weakSelf sendEventWithName:OPEN_EVENT body: @{@"id": invocationId}];
-    }];
+    if([QLPreviewController canPreviewItem:file]) {
+            [[RNFileViewer topViewController] presentViewController:controller animated:YES completion:^{
+                [weakSelf sendEventWithName:OPEN_EVENT body: @{@"id": invocationId}];
+            }];
+        } else {
+            [weakSelf sendEventWithName:OPEN_EVENT body: @{@"id": invocationId, @"error": @"NO_APP_ASSOCIATED"}];
+            reject(@"-1",@"NO_APP_ASSOCIATED",nil);
+        }
 }
 
 @end
